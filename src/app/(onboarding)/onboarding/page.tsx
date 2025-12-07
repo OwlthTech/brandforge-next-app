@@ -41,6 +41,14 @@ const STEPS = [
 ];
 
 export default function OnboardingPage() {
+  return (
+    <React.Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <OnboardingContent />
+    </React.Suspense>
+  );
+}
+
+function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams?.get("returnTo") || null;
@@ -144,7 +152,7 @@ export default function OnboardingPage() {
 
         if (uploadResponse.ok) {
           const { filePath } = await uploadResponse.json();
-          
+
           // Create asset record
           await fetch("/api/assets", {
             method: "POST",
@@ -175,7 +183,7 @@ export default function OnboardingPage() {
 
             if (uploadResponse.ok) {
               const { filePath } = await uploadResponse.json();
-              
+
               await fetch("/api/assets", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -207,7 +215,7 @@ export default function OnboardingPage() {
 
             if (uploadResponse.ok) {
               const { filePath } = await uploadResponse.json();
-              
+
               await fetch("/api/assets", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -281,18 +289,18 @@ export default function OnboardingPage() {
                 {currentStep} of {STEPS.length}
               </div>
             </div>
-            
+
             {/* Enhanced Progress Bar */}
             <div className="space-y-2">
               <div className="relative">
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-primary transition-all duration-300 ease-in-out rounded-full"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
               </div>
-              
+
               {/* Step Indicators */}
               <div className="flex items-center justify-between relative">
                 {STEPS.map((step, index) => (
@@ -300,19 +308,18 @@ export default function OnboardingPage() {
                     <div className="flex flex-col items-center gap-2">
                       <div className={`
                         w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm transition-all
-                        ${currentStep > step.id 
-                          ? "bg-primary text-primary-foreground" 
-                          : currentStep === step.id 
-                            ? "bg-primary text-primary-foreground ring-4 ring-primary/20" 
+                        ${currentStep > step.id
+                          ? "bg-primary text-primary-foreground"
+                          : currentStep === step.id
+                            ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
                             : "bg-muted text-muted-foreground"
                         }
                       `}>
                         {currentStep > step.id ? <Check className="h-4 w-4" /> : step.id}
                       </div>
                       <div className="text-center">
-                        <div className={`text-xs font-medium ${
-                          currentStep === step.id ? "text-primary" : "text-muted-foreground"
-                        }`}>
+                        <div className={`text-xs font-medium ${currentStep === step.id ? "text-primary" : "text-muted-foreground"
+                          }`}>
                           {step.title}
                         </div>
                         <div className="text-[10px] text-muted-foreground hidden sm:block">

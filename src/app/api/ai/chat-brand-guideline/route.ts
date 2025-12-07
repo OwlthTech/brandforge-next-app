@@ -3,7 +3,7 @@ import { streamText } from "ai";
 import { initAIClient } from "@/lib/ai/client";
 import { brandRepository, assetRepository } from "@/lib/repositories";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     const assets = await assetRepository.listForBrand(brandId);
-    
+
     const systemPrompt = `You are a professional brand strategist helping to create brand guidelines.
 
 Brand Context:
@@ -62,9 +62,9 @@ You can generate partial sections based on user requests, but always use valid J
   } catch (error) {
     console.error("Error in chat guideline generation:", error);
     return new Response(
-      JSON.stringify({ 
-        error: "Failed to process chat", 
-        details: error instanceof Error ? error.message : "Unknown error" 
+      JSON.stringify({
+        error: "Failed to process chat",
+        details: error instanceof Error ? error.message : "Unknown error"
       }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );

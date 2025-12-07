@@ -16,6 +16,7 @@
     "@ai-sdk/anthropic": "^2.0.53",
     "@ai-sdk/google": "^2.0.44",
     "@ai-sdk/openai": "^2.0.77",
+    "@ai-sdk/react": "^2.0.109",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-checkbox": "^1.3.3",

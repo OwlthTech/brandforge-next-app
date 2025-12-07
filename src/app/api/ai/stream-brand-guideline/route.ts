@@ -3,7 +3,7 @@ import { streamText } from "ai";
 import { initAIClient } from "@/lib/ai/client";
 import { brandRepository, assetRepository } from "@/lib/repositories";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
@@ -113,9 +113,9 @@ Make the guidelines specific to the ${context.industry} industry and aligned wit
   } catch (error) {
     console.error("Error streaming brand guidelines:", error);
     return new Response(
-      JSON.stringify({ 
-        error: "Failed to generate brand guidelines", 
-        details: error instanceof Error ? error.message : "Unknown error" 
+      JSON.stringify({
+        error: "Failed to generate brand guidelines",
+        details: error instanceof Error ? error.message : "Unknown error"
       }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );

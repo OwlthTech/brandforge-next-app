@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useChat, type Message } from "ai";
+import { useChat, type UIMessage as Message } from "@ai-sdk/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ export function ChatGuidelineGenerator({ brandId, onGenerated }: ChatGuidelineGe
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: "/api/ai/chat-brand-guideline",
     body: { brandId },
-    onFinish: (message: Message) => {
+    onFinish: (message: any) => {
       try {
         const jsonMatch = message.content.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || [null, message.content];
         const jsonText = jsonMatch[1] || message.content;
@@ -27,7 +27,7 @@ export function ChatGuidelineGenerator({ brandId, onGenerated }: ChatGuidelineGe
         console.error("Failed to parse guidelines:", err);
       }
     },
-  });
+  } as any) as any;
 
   const quickPrompts = [
     "Generate complete brand guidelines",
@@ -73,17 +73,16 @@ export function ChatGuidelineGenerator({ brandId, onGenerated }: ChatGuidelineGe
         {messages.length > 0 && (
           <ScrollArea className="h-96">
             <div className="space-y-4 pr-4">
-              {messages.map((message) => (
+              {messages.map((message: any) => (
                 <div
                   key={message.id}
                   className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-lg p-3 ${
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
-                    }`}
+                    className={`max-w-[80%] rounded-lg p-3 ${message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                      }`}
                   >
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                   </div>
