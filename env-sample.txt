@@ -1,0 +1,15 @@
+# AI SDK Configuration
+# Choose from: openai, anthropic, google
+AI_PROVIDER=google
+
+# OpenAI Configuration (uncomment and set your key to use OpenAI)
+OPENAI_API_KEY=000
+
+# Anthropic Configuration (uncomment and set your key to use Claude)
+# ANTHROPIC_API_KEY=your-key-here
+
+# Google Configuration (uncomment and set your key to use Gemini)
+GOOGLE_GENERATIVE_AI_API_KEY=000
+AI_MODEL=gemini-2.5-flash
+# Database Configuration (for future use)
+# DATABASE_URL=file:./data/brandforge.db
