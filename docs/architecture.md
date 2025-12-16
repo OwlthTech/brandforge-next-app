@@ -156,42 +156,39 @@ brandforge/
       ai-loading-state.tsx                    # ✓ Implemented
       error-state.tsx                         # ✓ Implemented
 
-  lib/
-    db/
-      index.ts                                # SQLite client wrapper (e.g., Drizzle/Prisma/Better-SQLite3)
-      schema.ts                               # DB schema definitions
-      seed.ts                                 # Optional seeding for local dev
+    lib/
+      actions/                       # Server Actions (Mutations)
+        __tests__/                   # Unit tests (Vitest)
+        asset-actions.ts
+        brand-actions.ts
+        guideline-actions.ts
+        product-actions.ts
 
-    models/
-      user.ts
-      brand.ts
-      product.ts
-      guideline.ts
-      asset.ts
+      dal/                           # Data Access Layer
+        auth.ts
 
-    repositories/
-      user-repo.ts
-      brand-repo.ts
-      product-repo.ts
-      guideline-repo.ts
-      asset-repo.ts
+      db/                            # Database Configuration
+        index.ts
+        schema.ts
+        
+      repositories/                  # Database Operations
+        user-repo.ts
+        brand-repo.ts
+        product-repo.ts
+        guideline-repo.ts
+        asset-repo.ts
 
-    ai/
-      client.ts                               # AI SDK client setup
-      prompts/
-        brand-guideline.ts
-        product-guideline.ts
-        image-generation.ts                   # later
-        image-edit.ts                         # later
-      mappers/
-        guideline-mapper.ts                   # map DB→prompt input and AI result→DB
+      ai/                            # AI SDK Integration
+        client.ts
+        prompts/
+        mappers/
 
-    utils/
-      uuid.ts                                 # UUID helpers
-      validation.ts                           # Zod or similar schemas
-      accessibility.ts                        # a11y helpers
-      pagination.ts
-      file-storage.ts                         # local file path helpers
+      utils/                         # Helpers
+        uuid.ts
+        validation.ts
+        accessibility.ts
+        pagination.ts
+        file-storage.ts
 
   types/
     brand.ts
@@ -537,6 +534,25 @@ Key utility modules:
 - `lib/utils/file-storage.ts`
   - For local dev: maps uploaded files to a local directory under `public/uploads/...`, returns file paths.
   - Provides stubs for migration to cloud storage later.
+
+---
+
+## Security & Testing
+
+### Organization Access Control
+- **Server Actions:** All mutations (`create`, `update`, `delete`) in `lib/actions/*` enforce strict organization-level isolation.
+- **Verification:** Before performing any action on a Brand or its child entities (Products, Assets, Guidelines), the system:
+  1. Retrieves `organization_id` from the secure session cookie.
+  2. Verifies that the target Brand belongs to that `organization_id`.
+  3. Throws an `Unauthorized` error if the check fails.
+
+### Testing Strategy
+- **Framework:** Vitest with React Testing Library and JSDOM.
+- **Unit Tests:** Located in `__tests__` directories alongside source files (e.g., `src/lib/actions/__tests__`).
+- **Mocking:**
+  - `lib/db`: Mocked to prevent real database connections during tests.
+  - `lib/dal/auth`: Mocked authentication checks.
+  - `server-only`: Mocked to allow server actions to be tested in the Vitest environment.
 
 ---
 

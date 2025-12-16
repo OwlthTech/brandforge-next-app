@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useParams } from "next/navigation";
-import { AppShell } from "@/components/layout/app-shell";
+import { useSetBreadcrumbs } from "@/components/layout/breadcrumb-context";
 import { LoadingState, ErrorState } from "@/components/common";
 import {
   BrandDashboardHeader,
@@ -12,9 +12,12 @@ import {
 } from "@/components/brand";
 import type { Brand, Product, Asset, Guideline } from "@/lib/db/schema";
 
+import { useAuth } from "@/lib/auth";
+
 export default function BrandDashboardPage() {
   const params = useParams();
   const brandId = params.brandId as string;
+  const { organizationId } = useAuth();
 
   const [brand, setBrand] = React.useState<Brand | null>(null);
   const [products, setProducts] = React.useState<Product[]>([]);
@@ -22,6 +25,12 @@ export default function BrandDashboardPage() {
   const [guidelines, setGuidelines] = React.useState<Guideline[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Set breadcrumbs - update when brand loads
+  useSetBreadcrumbs([
+    { label: "Brands", href: "/brands" },
+    { label: brand?.name || "Loading..." }
+  ]);
 
   const fetchData = async () => {
     try {
@@ -59,58 +68,45 @@ export default function BrandDashboardPage() {
     if (brandId) {
       fetchData();
     }
-  }, [brandId]);
+  }, [brandId, organizationId]);
 
   if (isLoading) {
-    return (
-      <AppShell breadcrumbs={[{ label: "Brands", href: "/brands" }, { label: "Loading..." }]}>
-        <LoadingState message="Loading brand dashboard..." />
-      </AppShell>
-    );
+    return <LoadingState message="Loading brand dashboard..." />;
   }
 
   if (error || !brand) {
     return (
-      <AppShell breadcrumbs={[{ label: "Brands", href: "/brands" }, { label: "Error" }]}>
-        <ErrorState
-          title="Failed to load brand"
-          message={error || "Brand not found"}
-          onRetry={fetchData}
-        />
-      </AppShell>
+      <ErrorState
+        title="Failed to load brand"
+        message={error || "Brand not found"}
+        onRetry={fetchData}
+      />
     );
   }
 
-  const breadcrumbs = [
-    { label: "Brands", href: "/brands" },
-    { label: brand.name },
-  ];
-
   return (
-    <AppShell breadcrumbs={breadcrumbs}>
-      <div className="space-y-6">
-        <BrandDashboardHeader brand={brand} onUpdate={fetchData} />
-        
-        <div className="grid gap-6">
-          <BrandProductsSection
-            brandId={brandId}
-            products={products}
-            onUpdate={fetchData}
-          />
-          
-          <BrandAssetsSection
-            brandId={brandId}
-            assets={assets}
-            onUpdate={fetchData}
-          />
-          
-          <BrandGuidelinesSection
-            brandId={brandId}
-            guidelines={guidelines}
-            onUpdate={fetchData}
-          />
-        </div>
+    <div className="space-y-6">
+      <BrandDashboardHeader brand={brand} onUpdate={fetchData} />
+
+      <div className="grid gap-6">
+        <BrandProductsSection
+          brandId={brandId}
+          products={products}
+          onUpdate={fetchData}
+        />
+
+        <BrandAssetsSection
+          brandId={brandId}
+          assets={assets}
+          onUpdate={fetchData}
+        />
+
+        <BrandGuidelinesSection
+          brandId={brandId}
+          guidelines={guidelines}
+          onUpdate={fetchData}
+        />
       </div>
-    </AppShell>
+    </div>
   );
 }

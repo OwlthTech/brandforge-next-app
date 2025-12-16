@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useParams } from "next/navigation";
-import { AppShell } from "@/components/layout/app-shell";
+import { useSetBreadcrumbs } from "@/components/layout/breadcrumb-context";
 import { LoadingState, ErrorState } from "@/components/common";
 import {
   ProductDashboardHeader,
@@ -23,6 +23,13 @@ export default function ProductDashboardPage() {
   const [guidelines, setGuidelines] = React.useState<Guideline[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Set breadcrumbs - update when brand/product loads
+  useSetBreadcrumbs([
+    { label: "Brands", href: "/brands" },
+    { label: brand?.name || "Loading...", href: `/brands/${brandId}` },
+    { label: product?.name || "Loading..." }
+  ]);
 
   const fetchData = async () => {
     try {
@@ -64,77 +71,55 @@ export default function ProductDashboardPage() {
   }, [brandId, productId]);
 
   if (isLoading) {
-    return (
-      <AppShell breadcrumbs={[
-        { label: "Brands", href: "/brands" },
-        { label: "Loading...", href: `/brands/${brandId}` },
-        { label: "Loading..." }
-      ]}>
-        <LoadingState message="Loading product dashboard..." />
-      </AppShell>
-    );
+    return <LoadingState message="Loading product dashboard..." />;
   }
 
   if (error || !brand || !product) {
     return (
-      <AppShell breadcrumbs={[
-        { label: "Brands", href: "/brands" },
-        { label: brand?.name || "Brand", href: `/brands/${brandId}` },
-        { label: "Error" }
-      ]}>
-        <ErrorState
-          title="Failed to load product"
-          message={error || "Product not found"}
-          onRetry={fetchData}
-        />
-      </AppShell>
+      <ErrorState
+        title="Failed to load product"
+        message={error || "Product not found"}
+        onRetry={fetchData}
+      />
     );
   }
 
-  const breadcrumbs = [
-    { label: "Brands", href: "/brands" },
-    { label: brand.name, href: `/brands/${brandId}` },
-    { label: product.name },
-  ];
-
-  const productAssets = assets.filter(a => 
+  const productAssets = assets.filter(a =>
     a.type === "product-image" || a.type === "design-reference"
   );
   const referenceAssets = assets.filter(a => a.type === "design-reference");
   const productGuidelines = guidelines.filter(g => g.productId === productId);
 
   return (
-    <AppShell breadcrumbs={breadcrumbs}>
-      <div className="space-y-6">
-        <ProductDashboardHeader
+    <div className="space-y-6">
+      <ProductDashboardHeader
+        brandId={brandId}
+        product={product}
+        onUpdate={fetchData}
+      />
+
+      <div className="grid gap-6">
+        <ProductAssetsSection
           brandId={brandId}
-          product={product}
+          productId={productId}
+          assets={productAssets}
           onUpdate={fetchData}
         />
-        
-        <div className="grid gap-6">
-          <ProductAssetsSection
-            brandId={brandId}
-            productId={productId}
-            assets={productAssets}
-            onUpdate={fetchData}
-          />
-          
-          <ProductReferencesSection
-            brandId={brandId}
-            productId={productId}
-            assets={referenceAssets}
-            onUpdate={fetchData}
-          />
-          
-          <ProductGuidelinesSection
-            brandId={brandId}
-            productId={productId}
-            guidelines={productGuidelines}
-            onUpdate={fetchData}
-          />
-        </div>
+
+        <ProductReferencesSection
+          brandId={brandId}
+          productId={productId}
+          assets={referenceAssets}
+          onUpdate={fetchData}
+        />
+
+        <ProductGuidelinesSection
+          brandId={brandId}
+          productId={productId}
+          guidelines={productGuidelines}
+          onUpdate={fetchData}
+        />
       </div>
-    </AppShell>
+    </div>
   );
 }

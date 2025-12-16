@@ -3,7 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AppShell } from "@/components/layout/app-shell";
+import { useSetBreadcrumbs } from "@/components/layout/breadcrumb-context";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -16,10 +17,14 @@ import type { Brand } from "@/lib/db/schema";
 
 export default function BrandsPage() {
   const router = useRouter();
+  const { userId, organizationId } = useAuth();
   const [brands, setBrands] = React.useState<Brand[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isCreating, setIsCreating] = React.useState(false);
+
+  // Set breadcrumbs for this page
+  useSetBreadcrumbs([{ label: "Brands" }]);
 
   const [formData, setFormData] = React.useState({
     name: "",
@@ -30,21 +35,19 @@ export default function BrandsPage() {
   });
 
   React.useEffect(() => {
-    fetchBrands();
-  }, []);
+    if (userId) {
+      fetchBrands();
+    } else {
+      setIsLoading(false);
+    }
+  }, [userId, organizationId]); // Re-fetch when org changes
 
   const fetchBrands = async () => {
+    setIsLoading(true);
     try {
-      // For now, using first user. In real app, get from auth context
-      const usersResponse = await fetch("/api/users");
-      const { users } = await usersResponse.json();
-      
-      if (users.length === 0) {
-        setIsLoading(false);
-        return;
-      }
+      if (!userId) return;
 
-      const brandsResponse = await fetch(`/api/brands?userId=${users[0].id}`);
+      const brandsResponse = await fetch(`/api/brands?userId=${userId}`);
       const { brands: fetchedBrands } = await brandsResponse.json();
       setBrands(fetchedBrands);
     } catch (error) {
@@ -56,26 +59,11 @@ export default function BrandsPage() {
 
   const handleCreateBrand = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!userId) return;
+
     setIsCreating(true);
 
     try {
-      // Get or create user
-      let userId;
-      const usersResponse = await fetch("/api/users");
-      const { users } = await usersResponse.json();
-
-      if (users.length === 0) {
-        const createUserResponse = await fetch("/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: "User", email: "user@brandforge.com" }),
-        });
-        const { user } = await createUserResponse.json();
-        userId = user.id;
-      } else {
-        userId = users[0].id;
-      }
-
       // Create brand
       const response = await fetch("/api/brands", {
         method: "POST",
@@ -89,7 +77,7 @@ export default function BrandsPage() {
       if (!response.ok) throw new Error("Failed to create brand");
 
       const { brand } = await response.json();
-      
+
       // Reset form
       setFormData({
         name: "",
@@ -98,9 +86,9 @@ export default function BrandsPage() {
         primaryColor: "#0066cc",
         secondaryColor: "#ff6600",
       });
-      
+
       setIsDialogOpen(false);
-      
+
       // Navigate to new brand dashboard
       router.push(`/brands/${brand.id}`);
     } catch (error) {
@@ -111,18 +99,12 @@ export default function BrandsPage() {
     }
   };
 
-  const breadcrumbs = [{ label: "Brands" }];
-
-  if (isLoading) {
-    return (
-      <AppShell breadcrumbs={breadcrumbs}>
-        <LoadingState message="Loading your brands..." />
-      </AppShell>
-    );
+  if (isLoading && !brands.length) {
+    return <LoadingState message="Loading your brands..." />;
   }
 
   return (
-    <AppShell breadcrumbs={breadcrumbs}>
+    <>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Your Brands</h1>
@@ -236,11 +218,11 @@ export default function BrandsPage() {
 
       {brands.length === 0 ? (
         <EmptyState
-          title="No brands yet"
-          description="Create your first brand to start managing products and generating design assets"
+          title="No brands found"
+          description={organizationId ? "This organization has no brands yet." : "Create your first brand to start managing products."}
           icon={Palette}
           action={{
-            label: "Create Your First Brand",
+            label: "Create New Brand",
             onClick: () => setIsDialogOpen(true),
           }}
         />
@@ -285,6 +267,6 @@ export default function BrandsPage() {
           ))}
         </div>
       )}
-    </AppShell>
+    </>
   );
 }

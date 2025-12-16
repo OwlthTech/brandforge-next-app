@@ -8,6 +8,22 @@ import { randomUUID } from "crypto";
 export const generateId = () => randomUUID();
 
 /**
+ * Organization table (multi-tenant support)
+ */
+export const organizations = sqliteTable("organizations", {
+  id: text("id").primaryKey().$defaultFn(() => generateId()),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date())
+    .$onUpdateFn(() => new Date()),
+});
+
+/**
  * User table
  */
 export const users = sqliteTable("users", {
@@ -20,10 +36,32 @@ export const users = sqliteTable("users", {
 });
 
 /**
+ * Team Members table (user-organization-role mapping)
+ * One user can belong to multiple organizations with different roles
+ */
+export const teamMembers = sqliteTable("team_members", {
+  id: text("id").primaryKey().$defaultFn(() => generateId()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  role: text("role", {
+    enum: ["owner", "admin", "editor", "viewer", "ai_operator"]
+  }).notNull().default("viewer"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+/**
  * Brand table
  */
 export const brands = sqliteTable("brands", {
   id: text("id").primaryKey().$defaultFn(() => generateId()),
+  organizationId: text("organization_id")
+    .references(() => organizations.id, { onDelete: "cascade" }),
   userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
@@ -150,13 +188,54 @@ export const guidelineHistory = sqliteTable("guideline_history", {
 });
 
 /**
+ * Audit Logs table (action tracking)
+ */
+export const auditLogs = sqliteTable("audit_logs", {
+  id: text("id").primaryKey().$defaultFn(() => generateId()),
+  userId: text("user_id").references(() => users.id),
+  organizationId: text("organization_id").references(() => organizations.id),
+  action: text("action").notNull(), // e.g., "brand.create", "guideline.delete"
+  resourceType: text("resource_type").notNull(), // e.g., "brand", "product"
+  resourceId: text("resource_id"),
+  metadata: text("metadata", { mode: "json" }).$type<Record<string, unknown>>(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+
+/**
  * Relations
  */
+export const organizationsRelations = relations(organizations, ({ many }) => ({
+  teamMembers: many(teamMembers),
+  brands: many(brands),
+  auditLogs: many(auditLogs),
+}));
+
 export const usersRelations = relations(users, ({ many }) => ({
   brands: many(brands),
+  teamMemberships: many(teamMembers),
+}));
+
+export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
+  user: one(users, {
+    fields: [teamMembers.userId],
+    references: [users.id],
+  }),
+  organization: one(organizations, {
+    fields: [teamMembers.organizationId],
+    references: [organizations.id],
+  }),
 }));
 
 export const brandsRelations = relations(brands, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [brands.organizationId],
+    references: [organizations.id],
+  }),
   user: one(users, {
     fields: [brands.userId],
     references: [users.id],
@@ -230,3 +309,15 @@ export type InsertAsset = typeof assets.$inferInsert;
 
 export type GuidelineHistory = typeof guidelineHistory.$inferSelect;
 export type InsertGuidelineHistory = typeof guidelineHistory.$inferInsert;
+
+export type Organization = typeof organizations.$inferSelect;
+export type InsertOrganization = typeof organizations.$inferInsert;
+
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type InsertTeamMember = typeof teamMembers.$inferInsert;
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+// Role type for RBAC
+export type Role = "owner" | "admin" | "editor" | "viewer" | "ai_operator";

@@ -1,15 +1,19 @@
 import { brandRepository } from "@/lib/repositories";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { 
-      userId, 
-      name, 
-      description, 
-      industry, 
-      primaryColor, 
+    const cookieStore = await cookies();
+    const organizationId = cookieStore.get("organization_id")?.value;
+
+    const {
+      userId,
+      name,
+      description,
+      industry,
+      primaryColor,
       secondaryColor,
       websiteUrl,
       googleMyBusinessUrl,
@@ -33,6 +37,7 @@ export async function POST(request: Request) {
       websiteUrl,
       googleMyBusinessUrl,
       socialMediaUrls,
+      organizationId: organizationId || null,
     });
 
     return NextResponse.json({ brand }, { status: 201 });
@@ -49,6 +54,10 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
+    const cookieStore = await cookies();
+    const organizationId = cookieStore.get("organization_id")?.value;
+
+    console.log(`[API] GET /brands - userId: ${userId}, organizationId: ${organizationId}`);
 
     if (!userId) {
       return NextResponse.json(
@@ -57,7 +66,17 @@ export async function GET(request: Request) {
       );
     }
 
-    const brands = await brandRepository.listForUser(userId);
+    // Filter brands by organization if one is selected
+    let brands;
+    if (organizationId) {
+      console.log(`[API] Filtering by organization: ${organizationId}`);
+      brands = await brandRepository.listForOrganization(organizationId);
+    } else {
+      console.log(`[API] Filtering by user: ${userId}`);
+      brands = await brandRepository.listForUser(userId);
+    }
+
+    console.log(`[API] Found ${brands.length} brands`);
     return NextResponse.json({ brands });
   } catch (error) {
     console.error("Failed to fetch brands:", error);

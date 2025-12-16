@@ -279,13 +279,27 @@ Each task includes checkboxes to track completion. All UI and AI-related tasks m
 
 ---
 
+## 14. Server Actions & Testing
+
+- [x] **14.1 Server Action Security (Org-Based Access)**  
+  ✅ Refactored `asset-actions.ts`, `product-actions.ts`, and `guideline-actions.ts` to enforce organization-level isolation.  
+  ✅ Added `verifyBrandAccess` helper to `brand-repo.ts`.
+
+- [x] **14.2 Testing Infrastructure (Vitest)**  
+  ✅ Configured Vitest with `jsdom` and React Testing Library  
+  ✅ Implemented unit tests for all Server Actions (Asset, Product, Guideline)  
+  ✅ Mocked Database and Auth layers for isolated testing
+
+---
+
+
 ## Task Summary
 
-**Completed:** 45 tasks ✅  
+**Completed:** 47 tasks ✅  
 **In Progress:** 0 tasks 🔄  
 **Not Started:** 8 tasks ⬜  
 
-**Overall Progress:** ~85% Complete
+**Overall Progress:** ~88% Complete
 
 ---
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { brandRepository } from "@/lib/repositories";
+import { cookies } from "next/headers";
 
 export async function GET(
   request: NextRequest,
@@ -7,10 +8,21 @@ export async function GET(
 ) {
   try {
     const { brandId } = await params;
+    const cookieStore = await cookies();
+    const organizationId = cookieStore.get("organization_id")?.value;
+
+    // In production, we should also check userId/permissions
+    // For now, we rely on organization context
+
     const brand = await brandRepository.findById(brandId);
 
     if (!brand) {
       return NextResponse.json({ error: "Brand not found" }, { status: 404 });
+    }
+
+    // Check organization access
+    if (organizationId && brand.organizationId && brand.organizationId !== organizationId) {
+      return NextResponse.json({ error: "Brand not found in this organization" }, { status: 404 });
     }
 
     return NextResponse.json({ brand });

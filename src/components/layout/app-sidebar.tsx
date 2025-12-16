@@ -9,28 +9,29 @@ import {
   Settings,
   Home,
 } from "lucide-react";
-import Link from "next/link";
 
 import { NavMain } from "./nav-main";
 import { NavProjects } from "./nav-projects";
 import { NavUser } from "./nav-user";
+import { OrganizationSwitcher } from "./organization-switcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import type { Organization } from "@/lib/db/schema";
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  // TODO: Replace with actual brand data from context/props
-  const currentBrand = {
-    name: "BrandForge",
-    plan: "Free",
-  };
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  organizations?: Organization[];
+  activeOrganization?: Organization | null;
+}
 
+export function AppSidebar({
+  organizations = [],
+  activeOrganization = null,
+  ...props
+}: AppSidebarProps) {
   const navMain = [
     {
       title: "Dashboard",
@@ -99,21 +100,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/">
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <Palette className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{currentBrand.name}</span>
-                  <span className="truncate text-xs">{currentBrand.plan}</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <OrganizationSwitcher
+          organizations={organizations}
+          activeOrganization={activeOrganization}
+        />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />

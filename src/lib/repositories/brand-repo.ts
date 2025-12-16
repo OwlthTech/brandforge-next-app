@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { db } from "../db";
 import { brands, type InsertBrand, type Brand } from "../db/schema";
 
@@ -23,6 +23,26 @@ export const brandRepository = {
    * List all brands for a user
    */
   listForUser: async (userId: string): Promise<Brand[]> => {
+    return await db.select().from(brands).where(eq(brands.userId, userId));
+  },
+
+  /**
+   * List all brands for an organization
+   */
+  listForOrganization: async (organizationId: string): Promise<Brand[]> => {
+    return await db.select().from(brands).where(eq(brands.organizationId, organizationId));
+  },
+
+  /**
+   * List brands for user within a specific organization
+   */
+  listForUserInOrg: async (userId: string, organizationId: string | null): Promise<Brand[]> => {
+    if (organizationId) {
+      return await db.select().from(brands).where(
+        and(eq(brands.userId, userId), eq(brands.organizationId, organizationId))
+      );
+    }
+    // If no org specified, return brands without org (legacy) or all user brands
     return await db.select().from(brands).where(eq(brands.userId, userId));
   },
 
@@ -58,4 +78,14 @@ export const brandRepository = {
       .where(and(eq(brands.userId, userId), eq(brands.name, name)));
     return brand;
   },
+
+  /**
+   * Verify if a brand belongs to an organization
+   */
+  verifyBrandAccess: async (brandId: string, organizationId: string): Promise<boolean> => {
+    const brand = await brandRepository.findById(brandId);
+    if (!brand) return false;
+    return brand.organizationId === organizationId;
+  },
 };
+
